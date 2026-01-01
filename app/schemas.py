@@ -10,13 +10,12 @@ class UserCreate(BaseModel):
 
 class UserOut(BaseModel):
     id : int
-    name : str
     email : EmailStr
     role : str
 
     class Config:
         from_attributes = True
-        
+
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None
