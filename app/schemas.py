@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 from . enums import UserRole
@@ -19,6 +20,21 @@ class UserOut(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None
+
+class CategoryCreate(BaseModel):
+    name: str
+
+class CategoryUpdate(BaseModel):
+    name: str
+
+class CategoryOut(BaseModel):
+    id: int
+    name: str
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class Token(BaseModel):
     access_token : str
