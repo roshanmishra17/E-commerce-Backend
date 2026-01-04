@@ -1,8 +1,10 @@
 from enum import Enum
-from sqlalchemy import TIMESTAMP, Boolean, Column, DateTime, Integer, String, func, text
+from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Column, ForeignKey, Integer, Numeric, String, Text, func, text
 from sqlalchemy import Enum as SQLEnum
 from . database import Base
 from . enums import UserRole
+from sqlalchemy.orm import relationship
+
 
 class User(Base):
 
@@ -21,8 +23,7 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text('now()'))
-    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=func.now()
-)
+    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=text("now()"))
     
 class Category(Base):
     __tablename__ = "categories"
@@ -33,5 +34,68 @@ class Category(Base):
 
     is_active = Column(Boolean, nullable=False, server_default="true")
 
-    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()")
-)
+    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"))
+    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=text("now()"))
+
+    products = relationship("Product", back_populates="category")
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    name = Column(String(100),nullable = False,unique = True,index = True)
+    description = Column(Text)
+
+    price = Column(Numeric(10, 2), nullable=False)
+
+    is_active = Column(Boolean, nullable=False, server_default="true")
+
+    category_id = Column(
+        Integer,
+        ForeignKey("categories.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True
+    )
+
+    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"))
+    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=func.now())
+
+    category = relationship("Category", back_populates="products")
+    inventory = relationship("Inventory",back_populates="product",uselist=False)
+
+    
+    __table_args__ = (
+        CheckConstraint("price >= 0", name="price_non_negative"),
+    )
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    quantity = Column(Integer,nullable=False)
+    reserved_quantity = Column(Integer,nullable=False,server_default='0')
+
+    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"))
+    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=func.now())
+
+    product = relationship("Product", back_populates="inventory")
+    
+    __table_args__ = (
+        CheckConstraint("quantity >= 0", name="quantity_non_negative"),
+        CheckConstraint("reserved_quantity >= 0", name="reserved_quantity_non_negative"),
+        CheckConstraint(
+            "reserved_quantity <= quantity",
+            name="reserved_lte_quantity"
+        ),
+    )
