@@ -49,6 +49,8 @@ class Product(Base):
     description = Column(Text)
 
     price = Column(Numeric(10, 2), nullable=False)
+    slug = Column(String(200), unique=True, index=True, nullable=False)
+
 
     is_active = Column(Boolean, nullable=False, server_default="true")
 
