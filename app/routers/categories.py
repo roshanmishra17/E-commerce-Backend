@@ -12,8 +12,8 @@ router = APIRouter(
     tags=['Category']
 )
 
-@router.post('/',response_model=CategoryOut,status_code=status.HTTP_201_CREATED)
-def create_category(payload : CategoryCreate,db: Session = Depends(get_db),dependencies=[Depends(admin_required)]):
+@router.post('/',response_model=CategoryOut,status_code=status.HTTP_201_CREATED,dependencies=[Depends(admin_required)])
+def create_category(payload : CategoryCreate,db: Session = Depends(get_db)):
     name = payload.name.strip().lower()
 
     if not name:
@@ -45,13 +45,11 @@ def create_category(payload : CategoryCreate,db: Session = Depends(get_db),depen
 def get_categories(db : Session = Depends(get_db)):
     return db.query(models.Category).all()
 
-@router.patch('/{category_id}',response_model=CategoryOut)
+@router.patch('/{category_id}',response_model=CategoryOut,dependencies=[Depends(admin_required)])
 def update_category(
     category_id : int,
     payload : CategoryUpdate,
-    db: Session = Depends(get_db),
-    dependencies=[Depends(admin_required)]
-):
+    db: Session = Depends(get_db)):
     category = db.query(models.Category).filter(models.Category.id == category_id).first()
     if not category or not category.is_active:
         raise HTTPException(
@@ -71,11 +69,10 @@ def update_category(
     db.refresh(category)
     return category
 
-@router.patch("/{category_id}/deactivate", response_model=CategoryOut)
+@router.patch("/{category_id}/deactivate", response_model=CategoryOut,dependencies=[Depends(admin_required)])
 def deactivate_category(
     category_id: int,
     db: Session = Depends(get_db),
-    dependencies=[Depends(admin_required)]
 ):
     category = db.query(models.Category).filter(models.Category.id == category_id).first()
     if not category or not category.is_active:
@@ -89,11 +86,10 @@ def deactivate_category(
     db.refresh(category)
     return category
 
-@router.patch("/{category_id}/activate", response_model=CategoryOut)
+@router.patch("/{category_id}/activate", response_model=CategoryOut,dependencies=[Depends(admin_required)])
 def deactivate_category(
     category_id: int,
     db: Session = Depends(get_db),
-    dependencies=[Depends(admin_required)]
 ):
     category = db.query(models.Category).filter(models.Category.id == category_id).first()
     if not category:
