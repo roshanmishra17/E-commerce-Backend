@@ -1,5 +1,93 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException,status
+from .. schemas import ProductCreate, ProductOut, ProductUpdate
+from sqlalchemy.orm import Session
+from .. database import get_db
+from . admin import admin_required
+from .. import models
 
 
-router = APIRouter(tags='[Products]',prefix='/products')
 
+router = APIRouter(tags=['Products'],prefix='/products')
+
+@router.post('/',response_model=ProductOut,status_code=status.HTTP_201_CREATED,dependencies=[Depends(admin_required)])
+def create_products(payload : ProductCreate,db: Session = Depends(get_db)):
+    category = db.query(models.Category).filter(models.Category.id == payload.category_id).first()
+    
+    if not category or not category.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or inactive category"
+        )
+
+    products = models.Product(**payload.dict())
+
+    db.add(products)
+    db.commit()
+    db.refresh(products)
+
+    return products
+
+@router.get('/',response_model=list[ProductOut])
+def get_all_product(db: Session = Depends(get_db)):
+    return db.query(models.Product).all()
+
+@router.get('/{product_id}', response_model=ProductOut)
+def get_product(product_id : int, db: Session = Depends(get_db)):
+
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+
+    if not product or not product.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    return product
+
+@router.patch('/{product_id}',response_model=ProductOut,dependencies=[Depends(admin_required)])
+def update_product(product_id : int,payload : ProductUpdate,db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    
+    if not product or not product.is_active:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    for key, value in payload.dict(exclude_unset=True).items():
+        setattr(product, key, value)
+
+    db.commit()
+    db.refresh(product)
+    return product
+
+@router.patch('/{product_id}/deactivate',response_model=ProductOut,dependencies=[Depends(admin_required)])
+def deactivate_product(product_id : int,db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    
+    if not product or not product.is_active:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    product.is_active = False
+
+    db.commit()
+    db.refresh(product)
+    return product
+
+@router.patch('/{product_id}/activate',response_model=ProductOut,dependencies=[Depends(admin_required)])
+def activate_product(product_id : int,db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    category = db.query(models.Category).filter(models.Category.id == product_id).first()
+
+    if not category or not category.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot activate product in inactive category"
+        )
+
+    product.is_active = True
+
+    db.commit()
+    db.refresh(product)
+    return product

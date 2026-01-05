@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from . database import SessionLocal, engine,get_db
 from . import models
-from . routers import users,auth,categories
+from . routers import users,auth,categories,products
 from . config import settings
 from sqlalchemy.orm import Session
 from . utils import hash_pass
@@ -14,6 +14,7 @@ models.Base.metadata.create_all(bind=engine)
 app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(categories.router)
+app.include_router(products.router)
 
 ADMIN_EMAIL = settings.ADMIN_EMAIL
 ADMIN_PASSWORD = settings.ADMIN_PASSWORD
