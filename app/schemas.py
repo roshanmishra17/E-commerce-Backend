@@ -39,14 +39,14 @@ class CategoryOut(BaseModel):
 class ProductCreate(BaseModel):
     name : str
     slug : str
-    description = Optional[str] = None
-    price = condecimal(max_digits=10, decimal_places=2)
+    description : Optional[str] = None
+    price : condecimal(max_digits=10, decimal_places=2) # type: ignore
     category_id: int
 
 class ProductUpdate(BaseModel):
     name : Optional[str] = None
-    description = Optional[str] = None
-    price = Optional[condecimal(max_digits=10, decimal_places=2)] = None
+    description : Optional[str] = None
+    price : Optional[condecimal(max_digits=10, decimal_places=2)] = None # type: ignore
 
 class ProductOut(BaseModel):
     id: int
@@ -60,7 +60,6 @@ class ProductOut(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class Token(BaseModel):
     access_token : str
