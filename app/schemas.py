@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, condecimal
+from pydantic import BaseModel, EmailStr, condecimal, conint
 from . enums import UserRole
 
 class UserCreate(BaseModel):
@@ -61,7 +61,24 @@ class ProductOut(BaseModel):
     class Config:
         from_attributes = True
 
-class Token(BaseModel):
+class InventoryCreate(BaseModel):
+    product_id : int
+    quantity : conint(ge=0) # type: ignore
+
+class InventoryUpdate(BaseModel):
+    quantity : conint(ge=0) # type: ignore
+
+class InventoryOut(BaseModel):
+    product_id : int
+    quantity : conint(ge=0) # type: ignore
+    reserved_quantity : int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class Token(BaseModel): 
     access_token : str
     token_type : str
 
