@@ -78,6 +78,20 @@ class InventoryOut(BaseModel):
     class Config:
         from_attributes = True
 
+class CartItemAdd(BaseModel):
+    product_id: int
+    quantity: conint(gt=0) # type: ignore
+
+class CartItemUpdate(BaseModel):
+    quantity: conint(gt=0) # type: ignore
+
+class CartItemOut(BaseModel):
+    product_id: int
+    quantity: int
+
+class CartOut(BaseModel):
+    items: list[CartItemOut]
+
 class Token(BaseModel): 
     access_token : str
     token_type : str
