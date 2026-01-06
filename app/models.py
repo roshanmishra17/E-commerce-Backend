@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Column, ForeignKey, Integer, Numeric, String, Text, func, text
+from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Column, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func, text
 from sqlalchemy import Enum as SQLEnum
 from . database import Base
 from . enums import UserRole
@@ -101,3 +101,66 @@ class Inventory(Base):
             name="reserved_lte_quantity"
         ),
     )
+
+class Cart(Base):
+    __tablename__ = "carts"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="RESTRICT"),  # safer
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()")
+    )
+
+    updated_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        onupdate=func.now(),
+        index=True
+    )
+
+    user = relationship("User", back_populates="cart")
+
+    items = relationship(
+        "CartItem",
+        back_populates="cart",
+        cascade="all, delete-orphan"
+    )
+
+class CartItem(Base):
+    __tablename__ = "cart_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    cart_id = Column(
+        Integer,
+        ForeignKey("carts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True
+    )
+
+    quantity = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("cart_id", "product_id", name="unique_cart_product"),
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+    )
+
+    cart = relationship("Cart", back_populates="items")
