@@ -2,8 +2,11 @@ from enum import Enum
 from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Column, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func, text
 from sqlalchemy import Enum as SQLEnum
 from . database import Base
-from . enums import UserRole
+from . enums import UserRole,OrderStatus
 from sqlalchemy.orm import relationship
+import enum
+from sqlalchemy import Enum
+
 
 
 class User(Base):
@@ -22,8 +25,17 @@ class User(Base):
     )
     is_active = Column(Boolean, default=True, nullable=False)
 
-    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text('now()'))
-    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=text("now()"))
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text('now()')
+    )
+    updated_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        onupdate=text("now()")
+    )
     cart = relationship("Cart", back_populates="user", uselist=False)
     
 class Category(Base):
@@ -35,8 +47,17 @@ class Category(Base):
 
     is_active = Column(Boolean, nullable=False, server_default="true")
 
-    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"))
-    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=text("now()"))
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()")
+    )
+    updated_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        onupdate=text("now()")
+    )
 
     products = relationship("Product", back_populates="category")
 
@@ -62,8 +83,17 @@ class Product(Base):
         index=True
     )
 
-    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"))
-    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=func.now())
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()")
+    )
+    updated_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        erver_default=text("now()"),
+        onupdate=func.now()
+    )
 
     category = relationship("Category", back_populates="products")
     inventory = relationship("Inventory",back_populates="product",uselist=False)
@@ -89,8 +119,17 @@ class Inventory(Base):
     quantity = Column(Integer,nullable=False)
     reserved_quantity = Column(Integer,nullable=False,server_default='0')
 
-    created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"))
-    updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=func.now())
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()")
+    )
+    updated_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        onupdate=func.now()
+    )
 
     product = relationship("Product", back_populates="inventory")
     
@@ -165,4 +204,73 @@ class CartItem(Base):
     )
 
     cart = relationship("Cart", back_populates="items")
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id = Column(Integer,primary_key=True,index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id",ondelete='RESTRICT'),
+        nullable=False,
+        index = True
+    )
+    status = Column(
+        Enum(OrderStatus,name="order_status"),
+        nullable=False,
+        server_default=OrderStatus.pending.value,
+        index=True
+    )
+
+    total_amount = Column(Numeric(10,3),nullable=False)
+
+    created_at = Column(TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()")
+    )
+
+    updated_at = Column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        onupdate=func.now()
+    )
+
+    items = relationship(
+        "OrderItem",
+        back_populates="order",
+        cascade="all, delete-orphan"
+    )
+
+class OrderItem(Base):
+    __tablename__ = "order_items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+
+    order_id = Column(
+        Integer,
+        ForeignKey("orders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True
+    )
+
+    product_name = Column(String(150), nullable=False)
+    product_price = Column(Numeric(10, 2), nullable=False)
+
+    quantity = Column(Integer, nullable=False)
+
+    order = relationship("Order", back_populates="items")
+
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="order_item_quantity_positive"),
+    )
+
+
 
