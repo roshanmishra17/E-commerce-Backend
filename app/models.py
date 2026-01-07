@@ -24,6 +24,7 @@ class User(Base):
 
     created_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True),nullable=False,server_default=text("now()"),onupdate=text("now()"))
+    cart = relationship("Cart", back_populates="user", uselist=False)
     
 class Category(Base):
     __tablename__ = "categories"
@@ -164,3 +165,4 @@ class CartItem(Base):
     )
 
     cart = relationship("Cart", back_populates="items")
+
