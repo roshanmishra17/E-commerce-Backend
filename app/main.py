@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from . database import SessionLocal, engine,get_db
 from . import models
-from . routers import users,auth,categories,products
+from . routers import users,auth,categories,products,inventory,cart,orders
 from . config import settings
 from sqlalchemy.orm import Session
 from . utils import hash_pass
@@ -15,6 +15,9 @@ app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(products.router)
+app.include_router(inventory.router)
+app.include_router(cart.router)
+app.include_router(orders.router)
 
 ADMIN_EMAIL = settings.ADMIN_EMAIL
 ADMIN_PASSWORD = settings.ADMIN_PASSWORD
