@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, condecimal, conint
-from . enums import UserRole
+from . enums import OrderStatus, UserRole
 
 class UserCreate(BaseModel):
     name : str
@@ -99,6 +99,9 @@ class OrderOut(BaseModel):
     created_at: datetime
     class Config:
         from_attributes = True
+
+class OrderUpdateStatus(BaseModel):
+    status : OrderStatus
 
 class Token(BaseModel): 
     access_token : str
