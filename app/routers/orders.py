@@ -5,11 +5,20 @@ from . admin import admin_required
 from fastapi import APIRouter, Depends, HTTPException,status
 from .. import models
 from .. oauth import get_current_active_user
-from .. schemas import OrderOut
+from .. schemas import OrderOut, OrderUpdateStatus
 from sqlalchemy.exc import SQLAlchemyError
+from .. enums import OrderStatus
 
 
 router = APIRouter(prefix='/orders',tags=['Orders'])
+
+ALLOWED_TRANSITIONS = {
+    OrderStatus.pending: {OrderStatus.paid, OrderStatus.cancelled},
+    OrderStatus.paid: {OrderStatus.shipped, OrderStatus.cancelled},
+    OrderStatus.shipped: {OrderStatus.delivered},
+    OrderStatus.delivered: set(),
+    OrderStatus.cancelled: set(),
+}
 
 
 @router.post('/',response_model=OrderOut,status_code=status.HTTP_201_CREATED)
@@ -109,4 +118,34 @@ def get_my_order(order_id : int,db : Session = Depends(get_db),current_user: mod
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Order Not Found")
     
+    return order
+
+@router.get('/admin/orders',response_model=List[OrderOut],dependencies=[Depends(admin_required)])
+def list_my_orders(status: OrderStatus | None = None,db : Session = Depends(get_db)):
+    query = db.query(models.Order)
+    if status:
+        query = query.filter(models.Order.status == status)
+
+    return query.order_by(models.Order.created_at.desc()).all()
+
+
+@router.patch("/admin/orders/{order_id}/status",response_model=OrderOut)
+def update_order_status(order_id: int,payload: OrderUpdateStatus,db: Session = Depends(get_db),dependencies=[Depends(admin_required)]):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Order Not Found")
+    
+    allowed = ALLOWED_TRANSITIONS[order.status]
+
+    if payload.status not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status transition from {order.status}"
+        )
+    
+    order.status = payload.status
+    db.commit()
+    db.refresh(order)
+
     return order
