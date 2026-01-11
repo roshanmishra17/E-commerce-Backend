@@ -42,11 +42,13 @@ class ProductCreate(BaseModel):
     description : Optional[str] = None
     price : condecimal(max_digits=10, decimal_places=2) # type: ignore
     category_id: int
+    image_url: str | None
 
 class ProductUpdate(BaseModel):
     name : Optional[str] = None
     description : Optional[str] = None
     price : Optional[condecimal(max_digits=10, decimal_places=2)] = None # type: ignore
+    image_url: str | None
 
 class ProductOut(BaseModel):
     id: int
@@ -54,6 +56,7 @@ class ProductOut(BaseModel):
     slug: str
     description: Optional[str]
     price: float
+    image_url: str | None 
     is_active: bool
     category_id: int
     created_at: datetime
