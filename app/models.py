@@ -76,6 +76,8 @@ class Product(Base):
 
     is_active = Column(Boolean, nullable=False, server_default="true")
 
+    image_url = Column(String(500), nullable=True)
+
     category_id = Column(
         Integer,
         ForeignKey("categories.id", ondelete="RESTRICT"),
