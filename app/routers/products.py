@@ -44,6 +44,13 @@ def get_product(product_id : int, db: Session = Depends(get_db)):
 
     return product
 
+@router.get("/slug/{slug}", response_model=ProductOut)
+def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.slug == slug).first()
+    if not product or not product.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    return product
+
 @router.patch('/{product_id}',response_model=ProductOut,dependencies=[Depends(admin_required)])
 def update_product(product_id : int,payload : ProductUpdate,db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
