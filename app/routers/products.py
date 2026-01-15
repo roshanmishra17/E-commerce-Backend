@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException,status
-from .. schemas import ProductCreate, ProductOut, ProductUpdate
+import math
+from fastapi import APIRouter, Depends, HTTPException, Query,status
+from .. schemas import CategoryOut, ProductCreate, ProductListResponse, ProductOut, ProductUpdate
 from sqlalchemy.orm import Session
 from .. database import get_db
 from . admin import admin_required
@@ -27,10 +28,30 @@ def create_products(payload : ProductCreate,db: Session = Depends(get_db)):
 
     return products
 
-@router.get('/',response_model=list[ProductOut])
-def get_all_product(db: Session = Depends(get_db)):
-    return db.query(models.Product).all()
+@router.get('/',response_model=ProductListResponse)
+def get_all_product(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    base_query = db.query(models.Product).filter(models.Product.is_active == True)
 
+    total_items = base_query.count()
+
+    offset = (page - 1) * limit
+    products = base_query.offset(offset).limit(limit).all()
+
+    total_pages = math.ceil(total_items / limit) if total_items else 1
+
+    return {
+        "data": products,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_items": total_items,
+            "total_pages": total_pages
+        }
+    }
 @router.get('/{product_id}', response_model=ProductOut)
 def get_product(product_id : int, db: Session = Depends(get_db)):
 
@@ -46,7 +67,7 @@ def get_product(product_id : int, db: Session = Depends(get_db)):
 
 @router.get("/slug/{slug}", response_model=ProductOut)
 def get_product_by_slug(slug: str, db: Session = Depends(get_db)):
-    product = db.query(models.Product).filter(models.Product.slug == slug).first()
+    product = db.query(models.Product).filter(models.Product.slug == slug,models.Product.is_active == True).first()
     if not product or not product.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
     return product
@@ -85,7 +106,7 @@ def activate_product(product_id : int,db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    category = db.query(models.Category).filter(models.Category.id == product_id).first()
+    category = db.query(models.Category).filter(models.Category.id == product.category_id).first()
 
     if not category or not category.is_active:
         raise HTTPException(
