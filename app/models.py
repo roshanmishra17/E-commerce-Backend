@@ -93,7 +93,7 @@ class Product(Base):
     updated_at = Column(
         TIMESTAMP(timezone=True),
         nullable=False,
-        erver_default=text("now()"),
+        server_default=text("now()"),
         onupdate=func.now()
     )
 
