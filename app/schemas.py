@@ -58,11 +58,26 @@ class ProductOut(BaseModel):
     price: float
     image_url: str | None 
     is_active: bool
-    category_id: int
+    category : CategoryOut 
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class PaginationOut(BaseModel):
+    page: int
+    limit: int
+    total_items: int
+    total_pages: int
+
+
+class ProductListResponse(BaseModel):
+    data: list[ProductOut]
+    pagination: PaginationOut
+
+    class Config:
+        from_attributes = True
+
 
 class InventoryCreate(BaseModel):
     product_id : int
