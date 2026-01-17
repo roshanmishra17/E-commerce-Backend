@@ -106,8 +106,11 @@ class CartItemUpdate(BaseModel):
 class CartItemOut(BaseModel):
     product_id: int
     quantity: int
+    price : float
+    product_name : str
 
 class CartOut(BaseModel):
+    id: int | None
     items: list[CartItemOut]
 
 class OrderOut(BaseModel):
