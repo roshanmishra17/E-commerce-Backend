@@ -166,3 +166,36 @@ def update_order_status(order_id: int,payload: OrderUpdateStatus,db: Session = D
     db.refresh(order)
 
     return order
+
+@router.get("/admin/{order_id}")
+def admin_get_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    if current_user.role != models.UserRole.admin:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    items = db.query(models.OrderItem).filter(
+        models.OrderItem.order_id == order.id
+    ).all()
+
+    return {
+        "id": order.id,
+        "user_id": order.user_id,
+        "status": order.status,
+        "total_amount": float(order.total_amount),
+        "items": [
+            {
+                "id": i.id,
+                "product_name": i.product_name,
+                "product_price": float(i.product_price),
+                "quantity": i.quantity
+            }
+            for i in items
+        ]
+    }
