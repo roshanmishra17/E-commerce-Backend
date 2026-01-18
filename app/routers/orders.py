@@ -99,13 +99,30 @@ def create_order(db : Session = Depends(get_db),current_user: models.User = Depe
             detail="Order placement failed"
         )
 
-@router.get('/',response_model=List[OrderOut])
-def list_my_orders(db: Session = Depends(get_db),current_user: models.User = Depends(get_current_active_user)):
-    return(
-        db.query(models.Order).filter(models.Order.user_id == current_user.id)
+@router.get("/")
+def list_my_orders(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    orders = (
+        db.query(models.Order)
+        .filter(models.Order.user_id == current_user.id)
         .order_by(models.Order.created_at.desc())
         .all()
     )
+
+    return {
+        "data": [
+            {
+                "id": o.id,
+                "status": o.status,
+                "total_amount": float(o.total_amount),
+                "created_at": o.created_at
+            }
+            for o in orders
+        ]
+    }
+
 
 @router.get('/{order_id}',response_model=OrderOut)
 def get_my_order(order_id : int,db : Session = Depends(get_db),current_user: models.User = Depends(get_current_active_user)):
