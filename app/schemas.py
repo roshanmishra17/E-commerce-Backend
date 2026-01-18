@@ -113,11 +113,17 @@ class CartOut(BaseModel):
     id: int | None
     items: list[CartItemOut]
 
+class OrderItemOut(BaseModel):
+    id: int
+    product_name: str
+    product_price: float
+    quantity: int
+
 class OrderOut(BaseModel):
     id: int
     status: str
     total_amount: float
-    created_at: datetime
+    items: list[OrderItemOut]
     class Config:
         from_attributes = True
 
