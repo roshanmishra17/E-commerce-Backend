@@ -174,11 +174,11 @@ def admin_get_order(
     current_user: models.User = Depends(get_current_active_user)
 ):
     if current_user.role != models.UserRole.admin:
-        raise HTTPException(status_code=403, detail="Not allowed")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
 
     items = db.query(models.OrderItem).filter(
         models.OrderItem.order_id == order.id
@@ -199,3 +199,25 @@ def admin_get_order(
             for i in items
         ]
     }
+
+@router.post("/{order_id}/pay")
+def pay_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+
+    if order.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    if order.status !=  OrderStatus.pending:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Order cannot be paid")
+
+    order.status = OrderStatus.paid
+    db.commit()
+
+    return {"success": True}
