@@ -111,18 +111,40 @@ def list_my_orders(
         .all()
     )
 
-    return {
-        "data": [
-            {
-                "id": o.id,
-                "status": o.status,
-                "total_amount": float(o.total_amount),
-                "created_at": o.created_at
-            }
-            for o in orders
-        ]
-    }
+    result = []
 
+    for o in orders:
+        items = (
+            db.query(
+                models.OrderItem.product_id,
+                models.Product.name.label("product_name"),
+                models.Product.price.label("price"),
+                models.Product.image_url.label("image_url"),
+                models.OrderItem.quantity,
+            )
+            .join(models.Product, models.Product.id == models.OrderItem.product_id)
+            .filter(models.OrderItem.order_id == o.id)
+            .all()
+        )
+
+        result.append({
+            "id": o.id,
+            "status": o.status,
+            "total_amount": float(o.total_amount),
+            "created_at": o.created_at,
+            "items": [
+                {
+                    "product_id": i.product_id,
+                    "product_name": i.product_name,
+                    "price": float(i.price),
+                    "quantity": i.quantity,
+                    "image_url": i.image_url,
+                }
+                for i in items
+            ]
+        })
+
+    return {"data": result}
 
 @router.get('/{order_id}',response_model=OrderOut)
 def get_my_order(order_id : int,db : Session = Depends(get_db),current_user: models.User = Depends(get_current_active_user)):
