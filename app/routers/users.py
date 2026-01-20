@@ -4,7 +4,7 @@ from .. import models
 from .. database import get_db
 from sqlalchemy.orm import Session
 from .. utils import hash_pass
-from .. oauth import get_current_active_user, get_current_user
+from .. oauth import get_current_active_user
 
 router = APIRouter(
     prefix="/users",
@@ -60,3 +60,4 @@ def update_current_user(
     db.refresh(current_user)
 
     return current_user
+

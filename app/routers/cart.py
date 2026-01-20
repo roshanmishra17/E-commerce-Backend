@@ -140,6 +140,8 @@ def get_cart(
             models.CartItem.product_id,
             models.Product.name.label("product_name"),
             models.Product.price.label("price"),
+            models.Product.image_url.label("image_url"),
+
             models.CartItem.quantity
         )
         .join(models.Product, models.Product.id == models.CartItem.product_id)
@@ -154,6 +156,7 @@ def get_cart(
                 "product_id": i.product_id,
                 "product_name": i.product_name,
                 "price": float(i.price),
+                "image_url": i.image_url,
                 "quantity": i.quantity
             }
             for i in items

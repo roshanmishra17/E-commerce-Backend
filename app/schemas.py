@@ -104,6 +104,7 @@ class CartItemUpdate(BaseModel):
     quantity: conint(gt=0) # type: ignore
 
 class CartItemOut(BaseModel):
+    image_url: Optional[str]
     product_id: int
     quantity: int
     price : float

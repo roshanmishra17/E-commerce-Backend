@@ -10,3 +10,4 @@ def admin_required(current_user = Depends(get_current_user)):
             detail="Admin privileges required"
         )
     return current_user
+
