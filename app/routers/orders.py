@@ -146,18 +146,34 @@ def list_my_orders(
 
     return {"data": result}
 
-@router.get('/{order_id}',response_model=OrderOut)
-def get_my_order(order_id : int,db : Session = Depends(get_db),current_user: models.User = Depends(get_current_active_user)):
-    order = (
-        db.query(models.Order)
-        .filter(models.Order.id == order_id,models.Order.user_id == current_user.id)
-        .first()
-    )
+@router.get("/{order_id}",response_model=OrderOut)
+def get_my_order(order_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_active_user)):
 
-    if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Order Not Found")
-    
-    return order
+    orders = (
+        db.query(models.Order).filter(
+            models.Order.id == order_id,
+            models.Order.user_id == current_user.id
+        ).first()
+    )
+    if not orders:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+
+    return {
+            "id": orders.id,
+            "user_id": orders.user_id,
+            "status": orders.status,
+            "total_amount": float(orders.total_amount),
+            "items": [
+                {
+                    "id": item.id,
+                    "product_name": item.product_name,
+                    "product_price": float(item.product_price),
+                    "quantity": item.quantity,
+                    "image_url": item.product.image_url
+                }
+                for item in orders.items
+            ]
+        }
 
 @router.get('/admin/orders',response_model=List[OrderOut],dependencies=[Depends(admin_required)])
 def list_my_orders(status: OrderStatus | None = None,db : Session = Depends(get_db)):
