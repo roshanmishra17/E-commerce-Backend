@@ -87,7 +87,38 @@ def create_order(db : Session = Depends(get_db),current_user: models.User = Depe
         db.commit()
         db.refresh(order)
 
-        return order
+        items = (
+            db.query(
+                models.OrderItem.id,
+                models.OrderItem.product_id,
+                models.OrderItem.product_name,
+                models.OrderItem.product_price,
+                models.OrderItem.quantity,
+                models.Product.image_url
+            )
+            .join(models.Product, models.Product.id == models.OrderItem.product_id)
+            .filter(models.OrderItem.order_id == order.id)
+            .all()
+        )
+
+        return {
+            "id": order.id,
+            "status": order.status,
+            "user_id": order.user_id,
+            "total_amount": float(order.total_amount),
+            "items": [
+                {
+                    "id": i.id,
+                    "product_id": i.product_id,
+                    "product_name": i.product_name,
+                    "product_price": float(i.product_price),
+                    "quantity": i.quantity,
+                    "image_url": i.image_url
+                }
+                for i in items
+            ]
+        }
+
     except HTTPException:
         db.rollback()
         raise
@@ -302,6 +333,47 @@ def pay_order(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Order cannot be paid")
 
     order.status = OrderStatus.paid
+    db.commit()
+
+    return {"success": True}
+@router.post("/{order_id}/cancel")
+def cancel_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    order = db.query(models.Order).filter(
+        models.Order.id == order_id,
+        models.Order.user_id == current_user.id
+    ).first()
+
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+
+    if order.status != OrderStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending orders can be cancelled"
+        )
+
+    items = db.query(models.OrderItem).filter(
+        models.OrderItem.order_id == order.id
+    ).all()
+
+    for item in items:
+        inventory = db.query(models.Inventory).filter(
+            models.Inventory.product_id == item.product_id
+        ).first()
+
+        if inventory:
+            inventory.quantity += item.quantity
+            inventory.reserved_quantity -= item.quantity
+
+            if inventory.reserved_quantity < 0:
+                inventory.reserved_quantity = 0 
+
+    order.status = "cancelled"
+
     db.commit()
 
     return {"success": True}
