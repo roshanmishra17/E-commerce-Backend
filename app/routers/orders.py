@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from .. database import get_db
 from . admin import admin_required
@@ -175,14 +175,48 @@ def get_my_order(order_id: int, db: Session = Depends(get_db), current_user=Depe
             ]
         }
 
-@router.get('/admin/orders',response_model=List[OrderOut],dependencies=[Depends(admin_required)])
-def list_my_orders(status: OrderStatus | None = None,db : Session = Depends(get_db)):
+@router.get('/admin/orders', dependencies=[Depends(admin_required)])
+def list_orders(status: Optional[OrderStatus] = None , db: Session = Depends(get_db)):
     query = db.query(models.Order)
     if status:
         query = query.filter(models.Order.status == status)
 
-    return query.order_by(models.Order.created_at.desc()).all()
+    orders = query.order_by(models.Order.created_at.desc()).all()
 
+    result = []
+
+    for o in orders:
+        items = (
+            db.query(
+                models.OrderItem.product_id,
+                models.Product.name.label("product_name"),
+                models.Product.price.label("price"),
+                models.Product.image_url.label("image_url"),
+                models.OrderItem.quantity,
+            )
+            .join(models.Product, models.Product.id == models.OrderItem.product_id)
+            .filter(models.OrderItem.order_id == o.id)
+            .all()
+        )
+
+        result.append({
+            "id": o.id,
+            "status": o.status,
+            "total_amount": float(o.total_amount),
+            "created_at": o.created_at,
+            "items": [
+                {
+                    "product_id": i.product_id,
+                    "product_name": i.product_name,
+                    "price": float(i.price),
+                    "quantity": i.quantity,
+                    "image_url": i.image_url,
+                }
+                for i in items
+            ]
+        })
+
+    return {"data": result}
 
 @router.patch("/admin/orders/{order_id}/status",response_model=OrderOut)
 def update_order_status(order_id: int,payload: OrderUpdateStatus,db: Session = Depends(get_db),dependencies=[Depends(admin_required)]):
@@ -218,9 +252,19 @@ def admin_get_order(
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
 
-    items = db.query(models.OrderItem).filter(
-        models.OrderItem.order_id == order.id
-    ).all()
+    items = (
+        db.query(
+            models.OrderItem.id,
+            models.OrderItem.quantity,
+            models.Product.name.label("product_name"),
+            models.Product.price.label("product_price"),
+            models.Product.image_url.label("image_url"),
+        )
+        .join(models.Product, models.Product.id == models.OrderItem.product_id)
+        .filter(models.OrderItem.order_id == order.id)
+        .all()
+    )
+
 
     return {
         "id": order.id,
@@ -232,7 +276,8 @@ def admin_get_order(
                 "id": i.id,
                 "product_name": i.product_name,
                 "product_price": float(i.product_price),
-                "quantity": i.quantity
+                "quantity": i.quantity,
+                "image_url": i.image_url
             }
             for i in items
         ]

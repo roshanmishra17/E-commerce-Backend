@@ -269,6 +269,8 @@ class OrderItem(Base):
     quantity = Column(Integer, nullable=False)
 
     order = relationship("Order", back_populates="items")
+    product = relationship("Product")
+
 
     __table_args__ = (
         CheckConstraint("quantity > 0", name="order_item_quantity_positive"),

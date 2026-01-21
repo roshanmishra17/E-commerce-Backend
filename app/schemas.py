@@ -113,11 +113,11 @@ class CartItemOut(BaseModel):
 class CartOut(BaseModel):
     id: int | None
     items: list[CartItemOut]
-
 class OrderItemOut(BaseModel):
     id: int
     product_name: str
     product_price: float
+    image_url: str | None
     quantity: int
 
 class OrderOut(BaseModel):
