@@ -202,6 +202,7 @@ def list_orders(status: Optional[OrderStatus] = None , db: Session = Depends(get
         result.append({
             "id": o.id,
             "status": o.status,
+            "user_id" : o.user_id,
             "total_amount": float(o.total_amount),
             "created_at": o.created_at,
             "items": [
