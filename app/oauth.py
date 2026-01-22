@@ -7,6 +7,7 @@ from . database import get_db
 from . import models
 from . schemas import TokenData
 from . config import settings
+import os
 
 oauth2_schema = OAuth2PasswordBearer(tokenUrl = 'login')
 
