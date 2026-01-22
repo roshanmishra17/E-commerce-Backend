@@ -5,7 +5,7 @@ from .config import settings
 import os
 
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
