@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-models.Base.metadata.create_all(bind=engine)
 
 
 
@@ -36,6 +35,7 @@ app.include_router(orders.router)
 
 @app.on_event("startup")
 def create_initial_admin():
+    models.Base.metadata.create_all(bind=engine)
     db: Session = SessionLocal()
     try:
         admin = db.query(models.User).filter(
