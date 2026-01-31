@@ -61,5 +61,5 @@ http://localhost:8000/docs
 ## Author
 Roshan Mishra  
 BSc Computer Science Student  
-Backend-focused Full Stack Developer
+Frontend & Backend Developer
 GitHub: https://github.com/roshanmishra17
