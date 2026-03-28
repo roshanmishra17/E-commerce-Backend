@@ -13,19 +13,19 @@ app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
 
 
-
 ADMIN_EMAIL = settings.ADMIN_EMAIL
 ADMIN_PASSWORD = settings.ADMIN_PASSWORD
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://e-commerce-frontend-nine-zeta.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(categories.router)
