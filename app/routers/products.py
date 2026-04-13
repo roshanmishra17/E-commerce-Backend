@@ -33,12 +33,24 @@ def get_all_product(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=50),
     category_id: int | None = Query(None),
+    search: str | None = Query(None),
+    sort: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     base_query = db.query(models.Product).filter(models.Product.is_active == True)
-    
+
     if category_id:
         base_query = base_query.filter(models.Product.category_id == category_id)
+    
+    if search:
+        base_query = base_query.filter(
+            models.Product.name.ilike(f"%{search}%")
+        )
+
+    if sort == "price_asc":
+        base_query = base_query.order_by(models.Product.price.asc())
+    elif sort == "price_desc":
+        base_query = base_query.order_by(models.Product.price.desc())
 
     total_items = base_query.count()
 
